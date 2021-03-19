@@ -1,32 +1,81 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+<div id="app">
+  <div class="header">
+    <router-link to="/previous-surprises" class="logo-link">
+      <p>Previous Surprises</p>
+    </router-link>
+    <div class="logos">
+      <router-link to="/">
+        <h1 id="header-title">Surprise To-Do</h1>
+      </router-link>
+      <img src="../public/images/present-logo.png" class="picture">
     </div>
-    <router-view/>
+    <router-link to="/to-do-list" class="logo-link">
+      <p>To-Do List</p>
+    </router-link>
   </div>
+    <router-view />
+  <div class="footer">
+    <a href="https://github.com/MrParkerP/creative-project-3">Github</a>
+  </div>
+</div>
 </template>
 
 <style>
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #abcca9;
+}
+
+#header-title {
   text-align: center;
-  color: #2c3e50;
+  font-family: "Garamond", serif;
+  font-size: 3em;
+  color: #a83d36;
 }
 
-#nav {
-  padding: 30px;
+.picture {
+  height: 75px;
+  width: 75px;
+  margin-left: 20px;
 }
 
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
+.logos {
+  display: flex;
+  align-items: center;
 }
 
-#nav a.router-link-exact-active {
-  color: #42b983;
+.footer {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  background-color: #abcca9;
+
+  position: absolute;
+  bottom: 0;
+
 }
+
+a {
+  text-align: center;
+  text-decoration: none;
+}
+
+.logo-link {
+  display: flex;
+  color: black;
+  padding-top: 32px;
+}
+
+
 </style>
