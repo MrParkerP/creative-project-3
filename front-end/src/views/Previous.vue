@@ -18,8 +18,14 @@
         </div>
         <div class="button-container">
           <button class="previous-add-button" v-on:click="showCategories(task)">Add</button>
-          <div class="categories-container" v-if="currentTask == task">
+          <div class="categories-container" v-if="task.showCategories === true">
             <button class="categories" v-on:click="previousAdd(task, category)" v-for="category in categories" :key="category.id">{{category.title}}</button>
+          </div>
+          <div class="newCategoryContainer" v-if="customCategory">
+            <form v-on:submit.prevent="addCategory" v-if="task.showCategories === true">
+              <input type="text" v-model="newCategory" placeholder="Category Name">
+              <button class="addCategoryButton" type="submit">Add Category</button>
+            </form>
           </div>
         </div>
       </div>
@@ -36,12 +42,17 @@ export default {
     this.setUser();
     this.getTasks();
   },
+  updated() {
+    this.setUser();
+    this.getTasks();
+  },
   data () {
     return {
       tasks: [],
       user: '',
-      visibleCategories: false,
       categories: [],
+      customCategory: false,
+      newCategory: '',
       currentTask: '',
     }
   },
@@ -54,22 +65,42 @@ export default {
         console.log(error);
       }
     },
+    async addCategory() {
+      try {
+        await axios.post(`/api/user/${this.user._id}/categories`, {
+          title: this.newCategory,
+        });
+      } catch(error) {
+        console.log(error);
+      }
+      this.getCategories();
+      this.newCategory = '';
+    },
     setUser() {
       this.user = this.$root.$data.user;
     },
     showCategories(task) {
-      this.visibleCategories = true;
       this.getCategories();
+      this.customCategory = true;
       this.currentTask = task;
+      this.previousEdit(task);
+    },
+    async previousEdit(task) {
+      try {
+        await axios.put(`/api/previousTasks/${task._id}`);
+      } catch(error) {
+        console.log(error);
+      }
     },
     async previousAdd(task, category) {
       try {
-        await axios.post (`/api/categories/${category._id}/currentTasks`, {
+        await axios.post (`/api/user/${this.user._id}/categories/${category._id}/currentTasks`, {
           description: task.description,
           difficulty: task.difficulty,
           time: task.time,
         });
-        this.visibleCategories = false;
+        this.previousEdit(task);
+        this.customCategory = false;
         this.currentTask = '';
       } catch (error) {
         console.log(error);
@@ -170,6 +201,19 @@ h3 {
   margin-right: 5px;
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+.newCategoryContainer {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.addCategoryButton {
+  margin-left: 5px;
 }
 
 @media only screen and (max-width: 400px) {

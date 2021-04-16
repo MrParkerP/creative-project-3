@@ -1,10 +1,10 @@
 <template>
   <div class="home">
     <div class="explanation">
-      <h1 class="home-explanation" v-if="this.$root.$data.user!==''"> Press the button to generate a random To-Do item! </h1>
+      <h1 class="home-explanation" v-if="this.$root.$data.user!==null"> Press the button to generate a random To-Do item! </h1>
     </div>
     <div class="button-container">
-      <button class="generate-button" v-on:click="randomToDo" v-if="this.$root.$data.user!==''">Generate</button>
+      <button class="generate-button" v-on:click="randomToDo" v-if="this.$root.$data.user!==null">Generate</button>
     </div>
     <div v-if="this.$root.$data.generating" class="randomToDo">
       <p>Your random To-Do item is:</p>
@@ -16,7 +16,7 @@
       </div>
       <div class="newCategoryContainer" v-if="this.visibleCategories===true">
         <form v-on:submit.prevent="addCategory">
-          <input type="text" v-model="newCategory">
+          <input type="text" v-model="newCategory" placeholder="Category Name">
           <button class="addCategoryButton" type="submit">Add Category</button>
         </form>
       </div>
@@ -69,7 +69,7 @@ export default {
       this.user = this.$root.$data.user;
 
       try {
-        await axios.post (`/api/categories/${this.category._id}/currentTasks`, {
+        await axios.post (`/api/user/${this.user._id}/categories/${this.category._id}/currentTasks`, {
           description: this.description,
           difficulty: this.difficulty,
           time: this.time,

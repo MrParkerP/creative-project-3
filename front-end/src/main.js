@@ -6,7 +6,7 @@ import mock from './mock-data.js'
 
 let data = {
   possible: mock,
-  user: '',
+  user: null,
   generating: false,
   showLogout: true,
 }
@@ -14,11 +14,5 @@ let data = {
 new Vue({
   router,
   data,
-  created() {
-    if (this.$route.path !== '/'){
-      this.$router.push('/');
-    }
-
-  },
   render: h => h(App)
 }).$mount('#app')

@@ -1,7 +1,7 @@
 <template>
 <div id="app">
   <div class="header">
-    <router-link to="/previous-surprises" class="logo-link" v-if="userSelected">
+    <router-link to="/previous-surprises" class="logo-link" v-if="this.$root.$data.user !== null">
       <p>Previous Surprises</p>
     </router-link>
     <div class="logos">
@@ -10,41 +10,75 @@
       </router-link>
       <img src="../public/images/present-logo.png" class="picture">
     </div>
-    <router-link to="/to-do-list" class="logo-link" v-if="userSelected">
+    <router-link to="/to-do-list" class="logo-link" v-if="this.$root.$data.user !== null">
       <p>To-Do List</p>
     </router-link>
   </div>
-  <div class="user-selection" v-if="this.$root.$data.user===''">
+  <div class="user-selection" v-if="this.$root.$data.user===null">
     <div class="explanation" id="user-explanation">
-      <h1>Looks like you do not have a user selected. Please select one below or create a new one!</h1>
+      <h1>Looks like you are not logged in. Please login or register below!</h1>
     </div>
     <div class="form-container">
-      <form v-on:submit.prevent="addUser">
-        <input type="text" v-model="customUser" placeholder="Last, First">
-        <button type="submit" class="customUserButton">Add User</button>
-      </form>
-    </div>
-    <div class="users-container">
-      <div class="user-button-container" v-for="user in this.users" :key="user.id">
-        <button class="user-button" v-on:click="selectUser(user)">{{user.name}}</button>
-        <button class="delete-user-button" v-on:click="deleteUser(user)">X</button>
-        <button class="edit-user-button" v-on:click="openEdit(user)">Edit</button>
+      <h1>Login</h1>
+      <div class="input-container">
+        <input type="text" v-model="usernameLogin" placeholder="Username">
+      </div>
+      <div class="input-container">
+        <input type="password" v-model="passwordLogin" placeholder="Password">
+      </div>
+      <div class="input-container">
+        <button class="customUserButton" v-on:click="login">Login</button>
       </div>
     </div>
-    <div class="user-edit-container" v-if="userEdit">
-      <input type="text" v-model="newUserName">
-      <button class="submitEditButton" v-on:click="editUser">Submit</button>
+    <div class="form-container">
+      <h1>Register</h1>
+      <div class="input-container">
+        <input type="text" v-model="firstName" placeholder="First Name">
+      </div>
+      <div class="input-container">
+        <input type="text" v-model="lastName" placeholder="Last Name">
+      </div>
+      <div class="input-container">
+        <input type="text" v-model="username" placeholder="Username">
+      </div>
+      <div class="input-container">
+        <input type="password" v-model="password" placeholder="Password">
+      </div>
+      <div class="input-container">
+        <button class="customUserButton" v-on:click="register">Register</button>
+      </div>
     </div>
   </div>
-  <div class="user-greeting" v-if="this.$root.$data.user!==''">
-    <h3>Welcome {{this.$root.$data.user.name}}!</h3>
+  <div class="user-greeting" v-if="this.$root.$data.user!==null">
+    <h3>Welcome, {{this.$root.$data.user.firstName}} {{this.$root.$data.user.lastName}}!</h3>
     <router-link to="/">
       <button class="logoutButton" v-on:click="logout" router-link>Logout</button>
     </router-link>
+    <button class="editUserButton" v-on:click="openEdit">Edit</button>
+  </div>
+  <div class="edit-user-container" v-if="userEdit">
+      <div class="input-container">
+        <input v-model="newFirstName" placeholder="New First Name">
+      </div>
+      <div class="input-container">
+        <input v-model="newLastName" placeholder="New Last Name">
+      </div>
+      <div class="input-container">
+        <button class="submitEditButton" v-on:click="editUser">Submit</button>
+      </div>
+    <div class="buttons-container">
+      <div class="input-container">
+        <button class="deleteUserButton" v-on:click="deleteUser(user)">Delete User</button>
+      </div>
+      <div class="input-container">
+        <button class="closeUserEdit" v-on:click="closeUserEdit">Close</button>
+      </div>
+    </div>
   </div>
     <router-view />
   <div class="footer">
     <a href="https://github.com/MrParkerP/creative-project-3">Github</a>
+    <div>Hours: 7</div>
   </div>
 </div>
 </template>
@@ -57,72 +91,115 @@ export default {
   data() {
     return {
       customUser: '',
-      users: [],
       user: '',
       categories: [],
-      userSelected: false,
       userEdit: false,
-      newUserName: '',
+      newFirstName: '',
+      newLastName: '',
+      firstName: '',
+      lastName: '',
+      username: '',
+      password: '',
+      usernameLogin: '',
+      passwordLogin: '',
     }
   },
-  created() {
-    this.getUsers();
+  async created() {
+    try {
+      let response = await axios.get('/api/user');
+      this.$root.$data.user = response.data.user;
+      this.user = this.$root.$data.user;
+    } catch (error) {
+      this.$root.$data.user = null;
+    }
   },
   methods: {
-    logout() {
-      this.$root.$data.user = '';
-      this.$root.$data.generating = false;
-      this.userSelected = false;
+    async logout() {
+      try {
+        await axios.delete("/api/user");
+        this.$root.$data.user = null;
+        this.$root.$data.generating = false;
+        this.userEdit = false;
+      } catch (error) {
+        this.$root.$data.user = null;
+        this.$root.$data.generating = false;
+        }
     },
-    openEdit(user) {
-      this.user = user;
+    closeUserEdit() {
+      this.userEdit = false;
+      this.newLastName = '';
+      this.newFirstName = '';
+    },
+    openEdit() {
       this.userEdit = true;
     },
-    async addUser() {
+    async register() {
+      this.error = '';
+      this.errorLogin = '';
+      if (!this.firstName || !this.lastName || !this.username || !this.password)
+        return;
       try {
-        await axios.post('/api/user', {
-          name: this.customUser
+        let response = await axios.post('/api/user', {
+          firstName: this.firstName,
+          lastName: this.lastName,
+          username: this.username,
+          password: this.password,
         });
-      } catch(error) {
-        console.log(error);
-      }
-
-      this.getUsers();
-      this.customUser = '';
-    },
-    async getUsers() {
-      try {
-        let response = await axios.get("/api/user");
-        this.users = response.data;
-        return true;
-      } catch(error) {
-        console.log(error);
+        this.$root.$data.user = response.data.user;
+        this.user = this.$root.$data.user;
+        this.firstName = '';
+        this.lastName = '';
+        this.username = '';
+        this.password = '';
+      } catch (error) {
+        this.error = error.response.data.message;
+        this.$root.$data.user = null;
       }
     },
-    selectUser(user) {
-      this.$root.$data.user = user;
-      this.user = user;
-      this.userSelected = true;
+    async login() {
+       this.error = '';
+       this.errorLogin = '';
+       if (!this.usernameLogin || !this.passwordLogin)
+         return;
+       try {
+         let response = await axios.post('/api/user/login', {
+           username: this.usernameLogin,
+           password: this.passwordLogin,
+         });
+         this.$root.$data.user = response.data.user;
+         this.usernameLogin = '';
+         this.passwordLogin = '';
+       } catch (error) {
+         this.errorLogin = "Error: " + error.response.data.message;
+         this.$root.$data.user = null;
+       }
     },
     async deleteUser(user) {
       try {
+        this.logout();
         await axios.delete("/api/user/" + user._id);
-        this.getUsers();
         return true;
       } catch(error) {
         console.log(error);
       }
     },
     async editUser(){
-      try {
-        await axios.put("/api/user/" + this.user._id, {
-          name: this.newUserName
-        });
-        this.getUsers();
-        this.userEdit = false;
-        return true;
-      } catch(error){
-        console.log(error);
+      if ((this.newFirstName!=='') && (this.newLastName!=='')) {
+        try {
+          await axios.put(`/api/user/${this.user._id}`, {
+            firstName: this.newFirstName,
+            lastName: this.newLastName,
+          });
+          this.userEdit = false;
+          this.$root.$data.user.firstName = this.newFirstName;
+          this.$root.$data.user.lastName = this.newLastName;
+          this.newLastName = '';
+          this.newFirstName = '';
+          this.user = this.$root.$data.user;
+          return true;
+        } catch(error){
+          console.log(error);
+        }
       }
     },
   },
@@ -165,7 +242,7 @@ export default {
 .footer {
   display: flex;
   width: 100%;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   background-color: #abcca9;
   position: fixed;
@@ -200,17 +277,6 @@ a {
   padding-top: 5px;
 }
 
-.edit-user-button {
-  margin-right: 20px;
-}
-
-.delete-user-button {
-  background-color: red;
-}
-
-.edit-user-button {
-  background-color: #f5e967;
-}
 
 .user-edit-container {
   display: flex;
@@ -218,5 +284,42 @@ a {
   justify-content: center;
   align-items: center;
   margin-top: 10px;
+}
+
+.form-container {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-selection {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.input-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.editUserButton {
+  background-color: white;
+  border: none;
+  padding-top: 5px;
+  color: blue;
+}
+
+.deleteUserButton {
+  background-color: #fa7575;
+}
+
+.submitEditButton {
+  background-color: #abcca9;
 }
 </style>

@@ -4,21 +4,21 @@
       <div class="to-do-header-container">
         <h1> Your Current To-Do List</h1>
       </div>
-      <div class="conditional-to-do-header" v-if="this.categories.length===0">
+      <div class="conditional-to-do-header" v-if="categories.length===0">
         <h3>Looks like you have no tasks here! Try adding some and creating a category to put them in!</h3>
       </div>
-      <div class="categoriesContainer">
+      <div class="categoriesContainer" v-if="categories.length!==0">
         <div class="category-explanation-container">
           <h3>Please select a category:</h3>
         </div>
-        <div class="select-category=container" v-for="category in this.categories" :key=category.id>
+        <div class="select-category=container" v-for="category in categories" :key=category.id>
           <button class="selectCategory" v-on:click="getTasks(category)">{{category.title}}</button>
           <button class="deleteCategoryButton" v-on:click="deleteCategory(category)">X</button>
         </div>
       </div>
       <div class="newCategoryContainer">
         <form v-on:submit.prevent="addCategory">
-          <input type="text" v-model="newCategory">
+          <input type="text" v-model="newCategory" placeholder="Category Name">
           <button class="addCategoryButton" type="submit">Add Category</button>
         </form>
       </div>
@@ -45,9 +45,9 @@
           </div>
         </form>
       </div>
-      <div class="to-do-list">
+      <div class="to-do-list" v-if="categorySelected">
         <div class="category-header-container">
-          <h1>Category: {{category.title}}</h1>
+          <h1 v-if="categorySelected">Category: {{category.title}}</h1>
         </div>
         <div class="to-do-item" v-for="task in this.tasks" :key=task.id>
           <div class="to-do-info-container">
@@ -74,8 +74,10 @@ import axios from 'axios';
 
 export default {
   name: 'To-Do',
-  created () {
-    this.getUsers();
+  created() {
+    this.getCategories();
+  },
+  updated() {
     this.getCategories();
   },
   data () {
@@ -88,7 +90,7 @@ export default {
       customTime: '',
       categorySelected: false,
       category: '',
-      user: '',
+      user: null,
       newCategory: '',
     }
   },
@@ -117,10 +119,13 @@ export default {
     },
     async getCategories() {
       this.user = this.$root.$data.user;
-      if (this.user !== ''){
+      if (this.user !== null){
         try {
           let response = await axios.get(`/api/user/${this.user._id}/categories`);
           this.categories = response.data;
+          if (this.categories.length===0) {
+            this.categorySelected = false;
+          }
           return true;
         } catch(error) {
           console.log(error);
@@ -139,7 +144,7 @@ export default {
     },
     async addTask() {
       try {
-        await axios.post(`/api/categories/${this.category._id}/currentTasks`, {
+        await axios.post(`/api/user/${this.user._id}/categories/${this.category._id}/currentTasks`, {
           description: this.message,
           difficulty: this.customDifficulty,
           time: this.customTime,
